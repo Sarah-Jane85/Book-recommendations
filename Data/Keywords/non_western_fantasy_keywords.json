@@ -1,0 +1,382 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "last_updated": "2026-04-20",
+    "description": "Keyword whitelist for non-western fantasy book discovery project",
+    "purpose": "Two-purpose keyword list: 'find' keywords are used to query APIs and scrape book sources; 'match' keywords are used as tags to power the recommender system.",
+    "definition": "Non-western fantasy: fantasy that draws from non-western mythologies, folklore, spiritual systems, or cultural worldviews — written by an author with a non-western cultural background (by heritage, not necessarily by passport). Both conditions must be met.",
+    "exclusions": [
+      "Place names (too noisy — return too many non-fantasy results)",
+      "Western mythology (Norse, Greek, Arthurian etc.)",
+      "Authors of non-western heritage writing western fantasy tropes (vampires, werewolves, Tolkien-style)"
+    ],
+    "notes": [
+      "Diaspora authors are included if the book draws from their non-western cultural heritage",
+      "Popularity is tracked separately to allow the recommender to surface lesser-known books",
+      "Thematic match keywords are intentionally broad — the ML layer handles disambiguation"
+    ]
+  },
+  "find_keywords": {
+    "description": "Use these keywords in Open Library subject queries, Goodreads shelf searches, and LibraryThing tag searches to find qualifying books. Combine cultural terms with 'fantasy' or 'fiction' for best results.",
+    "umbrella_genre": [
+      "Afrofuturism",
+      "African fantasy",
+      "African speculative fiction",
+      "Indigenous Futurisms",
+      "Indigenous speculative fiction",
+      "Wuxia",
+      "Xianxia",
+      "Xuanhuan",
+      "Asian fantasy",
+      "East Asian fantasy",
+      "Southeast Asian fantasy",
+      "South Asian fantasy",
+      "Latin American fantasy",
+      "Mesoamerican fantasy",
+      "Latinx fantasy",
+      "Middle Eastern fantasy",
+      "Arabian fantasy",
+      "Islamic fantasy",
+      "Oceanian fantasy",
+      "Pacific Islander fantasy",
+      "Aboriginal speculative fiction",
+      "Mythology retelling non-western",
+      "Non-western epic fantasy",
+      "Own voices fantasy",
+      "BIPOC fantasy",
+      "YA fantasy",
+      "Young adult fantasy"
+    ],
+    "africa": {
+      "description": "West, East, Central and Southern African cultural and mythological terms",
+      "peoples_and_cultures": [
+        "Yoruba",
+        "Igbo",
+        "Akan",
+        "Zulu",
+        "Xhosa",
+        "Kikuyu",
+        "Ganda",
+        "Wolof",
+        "Hausa"
+      ],
+      "mythology_and_spirits": [
+        "Orisha",
+        "Juju",
+        "Obeah",
+        "Vodou",
+        "Anansi",
+        "Nyame",
+        "Mami Wata",
+        "Ancestor spirits",
+        "Bush spirit"
+      ],
+      "cultural_concepts": [
+        "Griot",
+        "Ubuntu",
+        "Africanfuturism",
+        "Africanjujuism"
+      ],
+      "regional_terms": [
+        "West African mythology",
+        "East African mythology",
+        "Southern African mythology"
+      ],
+      "awards": [
+        "Nommo Award"
+      ]
+    },
+    "asia": {
+      "description": "East, Southeast and South Asian cultural and mythological terms",
+      "japanese": [
+        "Yokai",
+        "Kami",
+        "Oni",
+        "Tengu",
+        "Kitsune",
+        "Tanuki",
+        "Shinto"
+      ],
+      "chinese": [
+        "Dragon emperor",
+        "Jade Emperor",
+        "Journey to the West",
+        "Taoist fantasy",
+        "Buddhist mythology",
+        "Cultivation novel",
+        "Immortal cultivation"
+      ],
+      "korean": [
+        "Gumiho",
+        "Dokkaebi",
+        "Korean shamanism",
+        "Mudang"
+      ],
+      "south_asian": [
+        "Asura",
+        "Rakshasa",
+        "Naga",
+        "Apsara",
+        "Deva",
+        "Gandharva",
+        "Yaksha"
+      ],
+      "filipino": [
+        "Aswang",
+        "Diwata",
+        "Babaylan",
+        "Anito",
+        "Manananggal"
+      ],
+      "southeast_asian": [
+        "Penanggal",
+        "Pontianak",
+        "Hantu",
+        "Orang Bunian"
+      ],
+      "regional_terms": [
+        "Chinese mythology",
+        "Japanese folklore",
+        "Korean mythology",
+        "Filipino folklore",
+        "Vietnamese mythology",
+        "Thai mythology",
+        "Malay folklore"
+      ]
+    },
+    "latin_america": {
+      "description": "Mesoamerican, South American and Afro-Caribbean cultural and mythological terms",
+      "mesoamerican_deities": [
+        "Quetzalcoatl",
+        "Tlaloc",
+        "Xibalba",
+        "Huitzilpochtli"
+      ],
+      "peoples_and_cultures": [
+        "Aztec mythology",
+        "Mayan mythology",
+        "Inca mythology",
+        "Nahua",
+        "Pre-Columbian fantasy",
+        "Mesoamerican gods"
+      ],
+      "folk_traditions": [
+        "Curandera",
+        "Brujeria",
+        "Santeria",
+        "Candomble",
+        "La Llorona",
+        "Nagual",
+        "Shapeshifter",
+        "Orixas",
+        "Umbanda"
+      ],
+      "regional_terms": [
+        "Afro-Caribbean mythology",
+        "Afro-Brazilian mythology"
+      ]
+    },
+    "middle_east_and_south_asia": {
+      "description": "Middle Eastern, North African, Persian and South Asian cultural and mythological terms",
+      "arabic_persian": [
+        "Djinn",
+        "Ifrit",
+        "Marid",
+        "Ghoul",
+        "Peri",
+        "Simurgh",
+        "One Thousand and One Nights",
+        "Arabian Nights retelling",
+        "Islamic mythology",
+        "Persian mythology",
+        "Zoroastrian"
+      ],
+      "south_asian": [
+        "Hindu mythology",
+        "Vedic fantasy",
+        "Mahabharata retelling",
+        "Ramayana retelling",
+        "Sanskrit epic",
+        "Puranic fantasy",
+        "Devi",
+        "Asura"
+      ],
+      "historical_settings": [
+        "Mughal fantasy",
+        "Ottoman fantasy"
+      ]
+    },
+    "indigenous_americas": {
+      "description": "Native American and First Nations cultural and mythological terms",
+      "nations_and_peoples": [
+        "Navajo mythology",
+        "Lakota mythology",
+        "Cherokee mythology",
+        "Anishinaabe",
+        "Ojibwe",
+        "Cree",
+        "Métis",
+        "Haudenosaunee",
+        "Wampanoag",
+        "Pueblo",
+        "Diné"
+      ],
+      "spirits_and_creatures": [
+        "Trickster spirit",
+        "Skinwalker",
+        "Wendigo",
+        "Thunderbird"
+      ],
+      "cultural_concepts": [
+        "Medicine wheel",
+        "Vision quest",
+        "Dreamtime Americas",
+        "Two-Spirit fantasy",
+        "Indigiqueer"
+      ],
+      "regional_terms": [
+        "First Nations fantasy",
+        "Native American mythology"
+      ]
+    },
+    "oceania_and_pacific": {
+      "description": "Aboriginal Australian, Māori and Pacific Islander cultural and mythological terms",
+      "aboriginal_australian": [
+        "Aboriginal Australian mythology",
+        "Dreamtime",
+        "Songlines",
+        "Bunyip",
+        "Torres Strait Islander",
+        "First Nations Australia"
+      ],
+      "maori_and_pacific": [
+        "Maori mythology",
+        "Tangaroa",
+        "Maui",
+        "Papatuanuku",
+        "Pacific Islander mythology",
+        "Polynesian mythology",
+        "Hawaiian mythology",
+        "Melanesian mythology",
+        "Micronesian mythology"
+      ],
+      "cultural_concepts": [
+        "Tapu",
+        "Mana",
+        "Atua",
+        "Wairua"
+      ]
+    }
+  },
+  "match_keywords": {
+    "description": "Use these as metadata tags on each book in the dataset. The recommender matches user queries like 'I like spirit world books' or 'coming of age' against these tags. A book can and should have multiple tags across categories.",
+    "protagonist": {
+      "description": "Who the story is about",
+      "keywords": [
+        "Female protagonist",
+        "Coming of age",
+        "Chosen one",
+        "Half-god",
+        "Demigod protagonist",
+        "Child of prophecy",
+        "Reluctant hero",
+        "Outcast hero",
+        "Female warrior",
+        "Trickster protagonist",
+        "Shapeshifter protagonist",
+        "Young shaman",
+        "Apprentice magic user",
+        "Spirit-touched child"
+      ]
+    },
+    "world_and_setting": {
+      "description": "Where and how the world works",
+      "keywords": [
+        "Spirit world",
+        "Ancestor realm",
+        "Underworld journey",
+        "Afterlife",
+        "Living and dead coexist",
+        "Portal to spirit realm",
+        "Gods walk among mortals",
+        "Multiple worlds",
+        "Parallel realms",
+        "Magic",
+        "Magic tied to nature",
+        "Sacred landscape",
+        "Post-colonial world",
+        "Colonialism through fantasy lens",
+        "Community magic",
+        "Collective power"
+      ]
+    },
+    "story_and_conflict": {
+      "description": "What the story is about and what drives the conflict",
+      "keywords": [
+        "War between worlds",
+        "Divine conflict",
+        "Prophecy",
+        "Forbidden magic",
+        "Stolen power",
+        "Lost heritage",
+        "Reclaiming identity",
+        "Reclaiming history",
+        "Cultural survival",
+        "Oral tradition retelling",
+        "Mythology retelling",
+        "Found family",
+        "Sisterhood",
+        "Loyalty vs duty",
+        "Revolution",
+        "Resistance against oppression",
+        "Monsters"
+      ]
+    },
+    "magic_system": {
+      "description": "How magic works in the book",
+      "keywords": [
+        "Ancestor magic",
+        "Blood magic",
+        "Nature magic",
+        "Music as magic",
+        "Weaving as magic",
+        "Dance as magic",
+        "Dream magic",
+        "Bone magic",
+        "Fire magic cultural",
+        "Spirit binding",
+        "Death magic",
+        "Healing magic",
+        "Curse breaking",
+        "Divination",
+        "Sacrifice magic"
+      ]
+    },
+    "tone_and_feel": {
+      "description": "The reading experience and emotional register",
+      "keywords": [
+        "Dark and lyrical",
+        "Epic scope",
+        "Intimate and personal",
+        "Political intrigue",
+        "Coming of age adventure",
+        "Grief and loss",
+        "Hope and resilience",
+        "Slow burn",
+        "Action-driven",
+        "Character-driven",
+        "Bittersweet ending",
+        "Mythic tone"
+      ]
+    },
+    "audience": {
+      "description": "Target readership — useful for filtering recommendations",
+      "keywords": [
+        "YA fantasy",
+        "Young adult",
+        "Middle grade",
+        "Adult fantasy"
+      ]
+    }
+  }
+}
