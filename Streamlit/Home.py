@@ -92,17 +92,6 @@ with col1:
 
 with col2:
     st.markdown(f"""
-        <a href="/Graphic_Novels" target="_self" style="text-decoration:none;">
-            <div style="text-align:center;">
-                <img class="book-img" src="data:image/png;base64,{img_graphic}"/>
-                <div class="book-title">Graphic Novels</div>
-                <div class="book-subtitle">Sequential art beyond the mainstream</div>
-            </div>
-        </a>
-    """, unsafe_allow_html=True)
-
-with col3:
-    st.markdown(f"""
         <a href="/Non_Fiction" target="_self" style="text-decoration:none;">
             <div style="text-align:center;">
                 <img class="book-img" src="data:image/png;base64,{img_nonfic}"/>
@@ -112,14 +101,25 @@ with col3:
         </a>
     """, unsafe_allow_html=True)
 
+with col3:
+    st.markdown(f"""
+        <a href="/Graphic_Novels" target="_self" style="text-decoration:none;">
+            <div style="text-align:center;">
+                <img class="book-img" src="data:image/png;base64,{img_graphic}"/>
+                <div class="book-title">Graphic Novels</div>
+                <div class="book-subtitle">Sequential art beyond the mainstream</div>
+            </div>
+        </a>
+    """, unsafe_allow_html=True)
+
 # ── Shelf + footer ────────────────────────────────────────────────────────────
 st.markdown("""
     <div style="height:6px; background:linear-gradient(180deg,#8B6914 0%,#5C4208 100%); 
-                border-radius:4px; margin-top:-10rem;
-                box-shadow:0 4px 8px rgba(0,0,0,0.5); max-width:680px; margin:0 auto;">
+                border-radius:2px; margin:6rem auto 0 auto;
+                box-shadow:0 4px 8px rgba(0,0,0,0.5); max-width:680px;">
     </div>
     <p style='text-align:center; opacity:0.55; color:#D4C5A9; 
               margin-top:1rem; font-size:1rem; letter-spacing:0.03rem;'>
-        Gonçalo Trindade &nbsp;·&nbsp; Rachel Vianna &nbsp;·&nbsp; Sarah Jane Nede &nbsp;— 2026
+        Sarah Jane Nede &nbsp;·&nbsp; Gonçalo Trindade &nbsp;·&nbsp; Rachel Vianna &nbsp;— 2026
     </p>
 """, unsafe_allow_html=True)

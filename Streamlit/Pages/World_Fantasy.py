@@ -1,4 +1,4 @@
-# ── Pages/world_fantasy.py ──────────────────────────────────────────────────
+# ── Pages/World_Fantasy.py ──────────────────────────────────────────────────
 import json
 import pickle
 import base64
@@ -8,13 +8,12 @@ from pathlib import Path
 from scipy import sparse
 from sklearn.metrics.pairwise import cosine_similarity
 import streamlit as st
-import streamlit.components.v1 as components
 import sys
+from Components.shared import set_page_style, back_button, show_author_bio, get_author_bio
 
-# ── Paths ────────────────────────────────────────────────────────────────────
+# ── Paths ─────────────────────────────────────────────────────────────────────
 ROOT      = Path(__file__).resolve().parents[2]
 MODEL_DIR = ROOT / "Models"
-ASSETS    = Path(__file__).resolve().parents[1] / "Assets"
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from Components.shared import set_page_style
 
@@ -28,7 +27,12 @@ st.set_page_config(
 
 set_page_style()
 
-# ── Load model (cached) ───────────────────────────────────────────────────────
+from Components.shared import set_page_style, back_button
+
+# ── Back button ───────────────────────────────────────────────────────────────
+back_button()
+
+# ── Load model ────────────────────────────────────────────────────────────────
 @st.cache_resource
 def load_model():
     df           = pd.DataFrame(json.load(open(MODEL_DIR / "books_index.json", encoding="utf-8")))
@@ -38,9 +42,8 @@ def load_model():
     return df, tfidf_matrix, vectorizer
 
 df, tfidf_matrix, vectorizer = load_model()
-print(f"✅ Loaded {len(df):,} books")
 
-# ── Recommender functions ────────────────────────────────────────────────────
+# ── Constants ─────────────────────────────────────────────────────────────────
 UNDERREPRESENTED = {
     "oceania", "australian-fantasy", "indigenous-fantasy", "indigenous_americas",
     "latin-american-fantasy", "latin_american", "south-american-fantasy",
@@ -49,6 +52,11 @@ UNDERREPRESENTED = {
     "anansi", "xianxia", "wuxia",
 }
 
+# ── Helper functions ──────────────────────────────────────────────────────────
+def safe(text):
+    if pd.isna(text): return ""
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
 def similarity_label(score):
     if score >= 0.3:  return "Almost identical"
     if score >= 0.15: return "Very similar"
@@ -56,36 +64,41 @@ def similarity_label(score):
     if score >= 0.04: return "Loosely related"
     return "Inspired by"
 
-def build_text(row):
-    parts = []
-    if row.get("description"):
-        parts.append(str(row["description"]))
-    subjects = row.get("subjects", [])
-    if isinstance(subjects, list) and subjects:
-        parts.append(" ".join(str(s) for s in subjects))
-    parts.append(str(row.get("title", "")) * 2)
-    parts.append(str(row.get("author", "")) * 2)
-    return " ".join(parts).strip()
+def card(title, author, rating, num_ratings, label, border_color, tag=""):
+    r = f"⭐ {rating}" if pd.notna(rating) and rating else ""
+    n = f"· {int(num_ratings):,} ratings" if pd.notna(num_ratings) and num_ratings > 0 else ""
+    t = f'<span style="color:{border_color}; font-size:0.8rem;">{safe(tag)}</span><br>' if tag else ""
+    return f"""
+        <div style="background:rgba(0,0,0,0.7); padding:1rem 1.25rem;
+                    border-radius:10px; margin-bottom:0.6rem;
+                    border-left:4px solid {border_color};">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="flex:1;">
+                    <strong style="color:#F5F0E8; font-size:1.05rem;">{safe(title)}</strong><br>
+                    <span style="color:#D4C5A9; font-size:0.9rem;">{safe(author)}</span><br>
+                    <span style="color:#D4C5A9; font-size:0.82rem;">{r} {n}</span>
+                </div>
+                <div style="text-align:right; padding-left:1rem; min-width:100px;">
+                    {t}
+                    <span style="color:{border_color}; font-size:0.82rem;">{safe(label)}</span>
+                </div>
+            </div>
+        </div>
+    """
 
-def recommend_three_lanes(query, df, tfidf_matrix, vectorizer, 
+# ── Recommender ───────────────────────────────────────────────────────────────
+def recommend_three_lanes(query, df, tfidf_matrix, vectorizer,
                           search_by="title", top_n=5):
-    if search_by == "title":
-        matches = df[df["title"].str.contains(query, case=False, na=False)]
+    if search_by in ("title", "author"):
+        col     = "title" if search_by == "title" else "author"
+        matches = df[df[col].str.contains(query, case=False, na=False)]
         if len(matches) == 0:
-            return None, None, None, None
-        idx        = matches.index[0]
-        query_book = df.iloc[idx]
-        query_vec  = tfidf_matrix[idx]
+            return None, pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        idx          = matches.index[0]
+        query_book   = df.iloc[idx]
+        query_vec    = tfidf_matrix[idx]
         query_author = query_book["author"].lower().strip()
-    elif search_by == "author":
-        matches = df[df["author"].str.contains(query, case=False, na=False)]
-        if len(matches) == 0:
-            return None, None, None, None
-        idx        = matches.index[0]
-        query_book = df.iloc[idx]
-        query_vec  = tfidf_matrix[idx]
-        query_author = query_book["author"].lower().strip()
-    else:  # keywords
+    else:
         query_vec    = vectorizer.transform([query])
         query_book   = None
         query_author = ""
@@ -121,59 +134,53 @@ def recommend_three_lanes(query, df, tfidf_matrix, vectorizer,
 
     return query_book, same_author, similar, hidden_gems
 
-# ── Page header ──────────────────────────────────────────────────────────────
+# ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("""
-    <div style='text-align:center; padding: 1.5rem 0 0.5rem 0;'>
-        <h1 style='font-size:2.8rem; color:#F5F0E8; 
-                   text-shadow: 2px 2px 8px rgba(0,0,0,0.8);'>
+    <div style="text-align:center; padding:1.5rem 0 1rem 0;">
+        <h1 style="font-size:3rem; color:#F5F0E8;
+                   text-shadow:2px 2px 8px rgba(0,0,0,0.8);">
             World Fantasy
         </h1>
-        <p style='font-size:1rem; color:#D4C5A9;'>
-            Fantasy & science fiction rooted in non-western mythologies and folklore
+        <p style="font-size:1.05rem; color:#D4C5A9; margin-bottom:0.75rem;">
+            Fantasy &amp; science fiction rooted in non-western mythologies and folklore
+        </p>
+        <p style="font-size:1rem; color:#F5F0E8; max-width:700px;
+                  margin:0 auto; line-height:1.8;
+                  background:rgba(0,0,0,0.5); padding:1rem 1.5rem;
+                  border-radius:10px;">
+            Everyone reads the same 10 books. This recommender helps you find
+            something amazing from a different heritage — African mythology,
+            Japanese folklore, Andean gods, Indigenous dreamtime, Arabian djinn
+            and much more.
+            <strong style="color:#F5D78E;">3,995 books</strong>
+            from traditions beyond the western canon. Broaden your horizon.
+        </p>
+        <p style="color:#D4C5A9; font-size:0.9rem; margin-top:0.75rem;">
+            🌍 Africa &nbsp;·&nbsp; ⛩️ Asia &nbsp;·&nbsp; 🕌 Middle East
+            &nbsp;·&nbsp; 🌿 Indigenous &nbsp;·&nbsp; 🌊 Oceania
+            &nbsp;·&nbsp; 🌺 South Asia &nbsp;·&nbsp; 🌎 Latin America
         </p>
     </div>
+    <hr style="border-color:rgba(255,255,255,0.15); margin-bottom:1.5rem;">
 """, unsafe_allow_html=True)
 
-st.markdown("---")
+# ── Layout ────────────────────────────────────────────────────────────────────
+middle, right = st.columns([3, 1])
 
-# ── Three columns ─────────────────────────────────────────────────────────────
-left, middle, right = st.columns([1.2, 2, 1.2])
+# ── Session state ─────────────────────────────────────────────────────────────
+if "query_book" not in st.session_state:
+    st.session_state.query_book  = None
+if "same_author" not in st.session_state:
+    st.session_state.same_author = pd.DataFrame()
+if "similar" not in st.session_state:
+    st.session_state.similar     = pd.DataFrame()
+if "hidden_gems" not in st.session_state:
+    st.session_state.hidden_gems = pd.DataFrame()
+if "no_results" not in st.session_state:
+    st.session_state.no_results  = False
 
-# ══ LEFT — About ══════════════════════════════════════════════════════════════
-with left:
-    st.markdown("""
-        <div style='background:rgba(0,0,0,0.45); padding:1.5rem; 
-                    border-radius:12px; border:1px solid rgba(255,255,255,0.15);'>
-            <h3 style='color:#F5D78E;'>About this recommender</h3>
-            <p style='color:#F5F0E8; line-height:1.7;'>
-                Everyone reads the same 10 books.<br><br>
-                This recommender helps you find something amazing from a different 
-                heritage — fantasy rooted in African mythology, Japanese folklore, 
-                Andean gods, Indigenous dreamtime, Arabian djinn, and much more.<br><br>
-                <strong style='color:#F5D78E;'>3,995 books</strong> from traditions 
-                beyond the western canon. Broaden your horizon.
-            </p>
-            <hr style='border-color:rgba(255,255,255,0.15);'>
-            <p style='color:#D4C5A9; font-size:0.85rem;'>
-                🌍 African & Diaspora<br>
-                ⛩️ East & Southeast Asia<br>
-                🕌 Middle East & Persia<br>
-                🌿 Indigenous Americas<br>
-                🌊 Oceania & Pacific<br>
-                🌺 South Asia<br>
-                🌎 Latin America
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-
-# ══ MIDDLE — Search ════════════════════════════════════════════════════════════
+# ══ MIDDLE ════════════════════════════════════════════════════════════════════
 with middle:
-    st.markdown("""
-        <h3 style='color:#F5D78E; text-align:center;'>
-            Find your next book
-        </h3>
-    """, unsafe_allow_html=True)
-
     search_mode = st.radio(
         "Search by:",
         ["Book title", "Author", "Keywords & themes"],
@@ -184,9 +191,9 @@ with middle:
     query = st.text_input(
         "Search",
         placeholder={
-            "Book title":         "e.g. Children of Blood and Bone",
-            "Author":             "e.g. Nnedi Okorafor",
-            "Keywords & themes":  "e.g. japanese spirit world fox magic",
+            "Book title":        "e.g. Children of Blood and Bone",
+            "Author":            "e.g. Nnedi Okorafor",
+            "Keywords & themes": "e.g. japanese spirit world fox magic",
         }[search_mode],
         label_visibility="collapsed"
     )
@@ -199,120 +206,163 @@ with middle:
             "Author":            "author",
             "Keywords & themes": "keywords",
         }
-        query_book, same_author, similar, hidden_gems = recommend_three_lanes(
+        qb, sa, si, hg = recommend_three_lanes(
             query, df, tfidf_matrix, vectorizer,
             search_by=mode_map[search_mode]
         )
+        st.session_state.query_book  = qb
+        st.session_state.same_author = sa
+        st.session_state.similar     = si
+        st.session_state.hidden_gems = hg
+        st.session_state.no_results  = (qb is None and mode_map[search_mode] != "keywords")
 
-        if query_book is None and mode_map[search_mode] != "keywords":
-            st.warning(f"No results found for '{query}'. Try different keywords.")
-        else:
-            if query_book is not None:
-                st.markdown(f"""
-                    <div style='background:rgba(255,255,255,0.08); padding:1rem; 
-                                border-radius:8px; margin-bottom:1rem;'>
-                        <p style='color:#F5D78E; margin:0; font-size:0.85rem;'>
-                            Showing results for:
-                        </p>
-                        <p style='color:#F5F0E8; margin:0; font-weight:bold;'>
-                            {query_book['title']} — {query_book['author']}
-                        </p>
+    # ── Show results ──────────────────────────────────────────────────────────
+    query_book  = st.session_state.query_book
+    same_author = st.session_state.same_author
+    similar     = st.session_state.similar
+    hidden_gems = st.session_state.hidden_gems
+
+    if st.session_state.no_results:
+        st.warning("No results found.")
+
+    elif query_book is not None or len(similar) > 0:
+        html = ""
+
+        if query_book is not None:
+            html += f"""
+            <div style="background:rgba(0,0,0,0.65); padding:0.75rem 1rem;
+                        border-radius:8px; margin-bottom:1.25rem; margin-top:1.5rem;">
+                <span style="color:#F5D78E; font-size:0.85rem;">Showing results for:</span><br>
+                <strong style="color:#F5F0E8; font-size:1.05rem;">
+                    {safe(query_book['title'])} — {safe(query_book['author'])}
+                </strong>
+            </div>"""
+
+        # Lane 1
+        if len(same_author) > 0:
+            html += "<h3 style=\"color:#F5D78E; margin:1.25rem 0 0.75rem 0;\">More by this author</h3>"
+            for _, book in same_author.iterrows():
+                r = f"⭐ {book['avg_rating']}" if pd.notna(book['avg_rating']) else ""
+                n = f"· {int(book['num_ratings']):,} ratings" if pd.notna(book['num_ratings']) and book['num_ratings'] > 0 else ""
+                html += f"""
+                <div style="background:rgba(0,0,0,0.7); padding:1rem 1.25rem;
+                            border-radius:10px; margin-bottom:0.6rem;
+                            border-left:4px solid #F5D78E;">
+                    <strong style="color:#F5F0E8; font-size:1.05rem;">{safe(book['title'])}</strong><br>
+                    <span style="color:#D4C5A9; font-size:0.9rem;">{safe(book['author'])}</span><br>
+                    <span style="color:#D4C5A9; font-size:0.82rem;">{r} {n}</span>
+                </div>"""
+
+        # Lane 2
+        html += "<h3 style=\"color:#F5D78E; margin:1.25rem 0 0.75rem 0;\">Similar books</h3>"
+        for _, book in similar.iterrows():
+            label = similarity_label(book['similarity'])
+            r = f"⭐ {book['avg_rating']}" if pd.notna(book['avg_rating']) else ""
+            n = f"· {int(book['num_ratings']):,} ratings" if pd.notna(book['num_ratings']) and book['num_ratings'] > 0 else ""
+            html += f"""
+            <div style="background:rgba(0,0,0,0.7); padding:1rem 1.25rem;
+                        border-radius:10px; margin-bottom:0.6rem;
+                        border-left:4px solid #A8D5B5;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div style="flex:1;">
+                        <strong style="color:#F5F0E8; font-size:1.05rem;">{safe(book['title'])}</strong><br>
+                        <span style="color:#D4C5A9; font-size:0.9rem;">{safe(book['author'])}</span><br>
+                        <span style="color:#D4C5A9; font-size:0.82rem;">{r} {n}</span>
                     </div>
-                """, unsafe_allow_html=True)
+                    <div style="text-align:right; padding-left:1rem; min-width:90px;">
+                        <span style="color:#A8D5B5; font-size:0.82rem;">{label}</span>
+                    </div>
+                </div>
+            </div>"""
 
-            # ── Lane 1 ──────────────────────────────────────────────────────
-            if len(same_author) > 0:
-                st.markdown("<h4 style='color:#F5D78E;'>📚 More by this author</h4>",
-                            unsafe_allow_html=True)
-                for _, book in same_author.iterrows():
-                    st.markdown(f"""
-                        <div style='background:rgba(255,255,255,0.07); padding:0.8rem; 
-                                    border-radius:8px; margin-bottom:0.5rem;
-                                    border-left:3px solid #F5D78E;'>
-                            <strong style='color:#F5F0E8;'>{book['title']}</strong><br>
-                            <span style='color:#D4C5A9; font-size:0.85rem;'>{book['author']}</span>
-                            <span style='float:right; color:#F5D78E; font-size:0.8rem;'>
-                                ⭐ {book['avg_rating'] if pd.notna(book['avg_rating']) else 'N/A'}
-                            </span>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-            # ── Lane 2 ──────────────────────────────────────────────────────
-            st.markdown("<h4 style='color:#F5D78E;'>🌍 Similar books</h4>",
-                        unsafe_allow_html=True)
-            for _, book in similar.iterrows():
+        # Lane 3
+        if len(hidden_gems) > 0:
+            html += "<h3 style=\"color:#F5D78E; margin:1.25rem 0 0.75rem 0;\">💎 Hidden gems from other heritages</h3>"
+            for _, book in hidden_gems.iterrows():
                 label = similarity_label(book['similarity'])
-                st.markdown(f"""
-                    <div style='background:rgba(255,255,255,0.07); padding:0.8rem; 
-                                border-radius:8px; margin-bottom:0.5rem;
-                                border-left:3px solid #A8D5B5;'>
-                        <strong style='color:#F5F0E8;'>{book['title']}</strong><br>
-                        <span style='color:#D4C5A9; font-size:0.85rem;'>{book['author']}</span>
-                        <span style='float:right; color:#A8D5B5; font-size:0.8rem;'>
-                            {label}
-                        </span><br>
-                        <span style='color:#D4C5A9; font-size:0.8rem;'>
-                            ⭐ {book['avg_rating'] if pd.notna(book['avg_rating']) else 'N/A'} 
-                            · {int(book['num_ratings']):,} ratings
-                        </span>
-                    </div>
-                """, unsafe_allow_html=True)
-
-            # ── Lane 3 ──────────────────────────────────────────────────────
-            if len(hidden_gems) > 0:
-                st.markdown("<h4 style='color:#F5D78E;'>💎 Hidden gems from other heritages</h4>",
-                            unsafe_allow_html=True)
-                for _, book in hidden_gems.iterrows():
-                    label = similarity_label(book['similarity'])
-                    st.markdown(f"""
-                        <div style='background:rgba(255,255,255,0.07); padding:0.8rem; 
-                                    border-radius:8px; margin-bottom:0.5rem;
-                                    border-left:3px solid #E8B4C0;'>
-                            <strong style='color:#F5F0E8;'>{book['title']}</strong><br>
-                            <span style='color:#D4C5A9; font-size:0.85rem;'>{book['author']}</span>
-                            <span style='float:right; color:#E8B4C0; font-size:0.8rem;'>
-                                {book['source_tag']} · {label}
-                            </span><br>
-                            <span style='color:#D4C5A9; font-size:0.8rem;'>
-                                ⭐ {book['avg_rating'] if pd.notna(book['avg_rating']) else 'N/A'}
-                                · {int(book['num_ratings']):,} ratings
-                            </span>
+                r = f"⭐ {book['avg_rating']}" if pd.notna(book['avg_rating']) else ""
+                n = f"· {int(book['num_ratings']):,} ratings" if pd.notna(book['num_ratings']) and book['num_ratings'] > 0 else ""
+                html += f"""
+                <div style="background:rgba(0,0,0,0.7); padding:1rem 1.25rem;
+                            border-radius:10px; margin-bottom:0.6rem;
+                            border-left:4px solid #E8B4C0;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="flex:1;">
+                            <strong style="color:#F5F0E8; font-size:1.05rem;">{safe(book['title'])}</strong><br>
+                            <span style="color:#D4C5A9; font-size:0.9rem;">{safe(book['author'])}</span><br>
+                            <span style="color:#D4C5A9; font-size:0.82rem;">{r} {n}</span>
                         </div>
-                    """, unsafe_allow_html=True)
+                        <div style="text-align:right; padding-left:1rem; min-width:90px;">
+                            <span style="color:#E8B4C0; font-size:0.82rem;">{safe(book['source_tag'])}</span><br>
+                            <span style="color:#E8B4C0; font-size:0.82rem;">{label}</span>
+                        </div>
+                    </div>
+                </div>"""
 
-# ══ RIGHT — Random obscure books ══════════════════════════════════════════════
+        # ── Author bio ────────────────────────────────────────────────────
+        all_authors = list(dict.fromkeys(
+            (list(same_author["author"].unique()) if len(same_author) > 0 else []) +
+            list(similar["author"].unique()) +
+            (list(hidden_gems["author"].unique()) if len(hidden_gems) > 0 else [])
+        ))
+
+        st.markdown(
+            "<p style='color:#F5D78E; font-size:0.9rem; margin-top:1rem;'>👤 View author bio:</p>",
+            unsafe_allow_html=True
+        )
+        show_author_bio(all_authors, safe)
+
+        # ── Render cards ──────────────────────────────────────────────────
+        html = f'<div style="max-width:750px; margin:0 auto;">{html}</div>'
+        st.markdown(html, unsafe_allow_html=True)
+            
+
+# ══ RIGHT ═════════════════════════════════════════════════════════════════════
 with right:
     st.markdown("""
-        <h3 style='color:#F5D78E; text-align:center;'>
+        <h4 style="color:#F5D78E; text-align:center; margin-bottom:0.25rem;">
             Discover
-        </h3>
-        <p style='color:#D4C5A9; font-size:0.85rem; text-align:center;'>
-            Obscure books from our collection
+        </h4>
+        <p style="color:#D4C5A9; font-size:0.8rem; text-align:center;
+                  margin-bottom:1rem;">
+            Gems from our collection
         </p>
     """, unsafe_allow_html=True)
 
-    # Pick 5 random obscure books (low ratings, has cover)
     obscure = df[
         (df["num_ratings"] < 500) &
         (df["num_ratings"] > 0) &
-        (df["cover_url"].str.startswith("http", na=False))
+        (df["cover_url"].str.startswith("http", na=False)) &
+        (df["description"].str.len() > 200) &
+        (~df["description"].str.contains("A work of fantasy fiction involving", na=False)) &
+        # Filter out comics and series volumes
+        (~df["title"].str.contains(r"#\d|Vol\.|Volume|Season One|Season Two", 
+                                case=False, na=False, regex=True))
     ].sample(5, random_state=None)
 
+    covers_html = ""
     for _, book in obscure.iterrows():
-        st.markdown(f"""
-            <div style='background:rgba(0,0,0,0.35); padding:0.8rem; 
-                        border-radius:8px; margin-bottom:0.8rem;
-                        border:1px solid rgba(255,255,255,0.1);
-                        text-align:center;'>
-                <img src="{book['cover_url']}" 
-                     style='height:120px; object-fit:contain; border-radius:4px;
-                            margin-bottom:0.5rem;'
-                     onerror="this.style.display='none'"/>
-                <p style='color:#F5F0E8; font-size:0.8rem; margin:0; font-weight:bold;'>
-                    {book['title'][:40]}{'...' if len(book['title']) > 40 else ''}
+        title  = safe(book['title'])[:35] + ('...' if len(str(book['title'])) > 35 else '')
+        author = safe(book['author'])[:25]
+        url    = str(book['cover_url'])  # ← no safe() here!
+        covers_html += f"""
+            <div style="background:rgba(0,0,0,0.55); padding:0.5rem;
+                        border-radius:8px; margin-bottom:0.75rem;
+                        border:1px solid rgba(255,255,255,0.12);
+                        text-align:center;">
+                <img src="{url}"
+                    style="max-height:220px; max-width:100%;
+                        object-fit:contain; border-radius:3px;
+                        margin-bottom:0.5rem;"
+                    onerror="this.style.display='none'"/>
+                <p style="color:#F5F0E8; font-size:0.8rem; margin:0;
+                           font-weight:bold; line-height:1.3;">
+                    {title}
                 </p>
-                <p style='color:#D4C5A9; font-size:0.75rem; margin:0;'>
-                    {book['author'][:30]}
+                <p style="color:#D4C5A9; font-size:0.72rem; margin:0;">
+                    {author}
                 </p>
-            </div>
-        """, unsafe_allow_html=True)
+            </div>"""
+
+    st.markdown(covers_html, unsafe_allow_html=True)
+
