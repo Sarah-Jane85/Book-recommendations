@@ -71,3 +71,113 @@ def page_header(title, subtitle=None):
     if subtitle:
         st.markdown(f"*{subtitle}*")
     st.markdown("---")
+
+def back_button():
+    """Renders a back to home button."""
+    st.markdown("""
+        <a href="/" target="_self" style="
+            display: inline-block;
+            color: #D4C5A9;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.4rem 0.8rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(0,0,0,0.3);
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;">
+            ← Home
+        </a>
+    """, unsafe_allow_html=True)
+
+# ── Author bio ────────────────────────────────────────────────────────────────
+import requests
+
+@st.cache_data
+def get_author_bio(author_name):
+    import requests
+    headers = {"User-Agent": "TheOtherShelf/1.0 (book recommender project)"}
+    try:
+        r = requests.get(
+            "https://en.wikipedia.org/api/rest_v1/page/summary/" +
+            author_name.replace(" ", "_"),
+            headers=headers,
+            timeout=5
+        )
+        if r.status_code == 200:
+            data = r.json()
+            return {
+                "extract": data.get("extract", ""),
+                "image":   data.get("thumbnail", {}).get("source", ""),
+                "url":     data.get("content_urls", {}).get("desktop", {}).get("page", "")
+            }
+        # Fallback — try search API
+        r2 = requests.get(
+            "https://en.wikipedia.org/w/api.php",
+            headers=headers,
+            params={
+                "action":   "query",
+                "list":     "search",
+                "srsearch": author_name + " author writer",
+                "format":   "json",
+                "srlimit":  1,
+            },
+            timeout=5
+        )
+        results = r2.json().get("query", {}).get("search", [])
+        if results:
+            title = results[0]["title"]
+            r3 = requests.get(
+                f"https://en.wikipedia.org/api/rest_v1/page/summary/{title.replace(' ', '_')}",
+                headers=headers,
+                timeout=5
+            )
+            if r3.status_code == 200:
+                data = r3.json()
+                return {
+                    "extract": data.get("extract", ""),
+                    "image":   data.get("thumbnail", {}).get("source", ""),
+                    "url":     data.get("content_urls", {}).get("desktop", {}).get("page", "")
+                }
+        return None
+    except:
+        return None
+
+def show_author_bio(authors, safe_fn):
+    selected = st.selectbox(
+        "author_select",
+        ["— select an author —"] + authors,
+        label_visibility="collapsed",
+        key="author_bio_select"
+    )
+
+    if selected != "— select an author —":
+        with st.spinner("Loading bio..."):
+            bio = get_author_bio(selected)
+        if bio and bio["extract"]:
+            col_text, col_img = st.columns([3, 1])  # text left, image right
+            with col_text:
+                st.markdown(f"""
+                    <div style="background:rgba(0,0,0,0.7); padding:1rem 1.25rem;
+                                border-radius:10px; max-width:750px; margin:0 auto;">
+                        <h4 style="color:#F5D78E; margin:0 0 0.5rem 0;">
+                            {safe_fn(selected)}
+                        </h4>
+                        <p style="color:#F5F0E8; font-size:0.9rem; line-height:1.7;">
+                            {safe_fn(bio['extract'][:500])}...
+                        </p>
+                        <a href="{bio['url']}" target="_blank"
+                           style="color:#A8D5B5; font-size:0.85rem;">
+                            Read more on Wikipedia →
+                        </a>
+                    </div>
+                """, unsafe_allow_html=True)
+            with col_img:
+                if bio["image"]:
+                    st.image(bio["image"], width=130)
+        else:
+            st.markdown(f"""
+                <p style="color:#D4C5A9; font-size:0.9rem;">
+                    No Wikipedia page found for {safe_fn(selected)}.
+                </p>
+            """, unsafe_allow_html=True)
