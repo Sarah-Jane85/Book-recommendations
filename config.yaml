@@ -1,31 +1,31 @@
 project:
-  name: book-recommendations
+  name: the-other-shelf
   version: "1.0"
 
 collectors:
   non_western_fantasy:
     keywords_file: Data/Keywords/non_western_fantasy_keywords.json
-    target_books_min: 1000    # stop and flag if we fall below this
-    target_books_max: 5000    # stop collecting if we hit this
+    target_books_min: 1000
+    target_books_max: 5000
     api_target: 500
     scrape_target: 500
-    per_query_limit: 100      # max results per individual keyword query
+    per_query_limit: 100
 
   mature_graphic_novels:
     keywords_file: Data/Keywords/mature_graphic_novels_keywords.json
-    target_books_min: 1000    # stop and flag if we fall below this
-    target_books_max: 5000    # stop collecting if we hit this
+    target_books_min: 1000
+    target_books_max: 5000
     api_target: 500
     scrape_target: 500
-    per_query_limit: 100      # max results per individual keyword query
+    per_query_limit: 100
 
   non_fiction:
     keywords_file: Data/Keywords/non_fiction_keywords.json
-    target_books_min: 1000    # stop and flag if we fall below this
-    target_books_max: 5000    # stop collecting if we hit this
+    target_books_min: 1000
+    target_books_max: 5000
     api_target: 500
     scrape_target: 500
-    per_query_limit: 100      # max results per individual keyword query
+    per_query_limit: 100
 
 api:
   open_library:
@@ -33,20 +33,24 @@ api:
     rate_limit_seconds: 1
     max_results_per_query: 100
 
-# --- non_western fantasy collector ---
+# --- non_western_fantasy ---
 input_data_non_western_fantasy:
-  keywords: Data/Keywords/non_western_keywords.json
+  keywords: Data/Keywords/non_western_fantasy_keywords.json
 
 output_data_raw_non_western_fantasy:
-  api_results:      Data/Raw/non_western/api_results.json
-  scraped_results:  Data/Raw/non_western/scraped_results.json
+  ol_results:       Data/Raw/non_western_fantasy/ol_genre_first.json
+  gr_results:       Data/Raw/non_western_fantasy/goodreads_with_descriptions.csv
 
 output_data_clean_non_western_fantasy:
-  deduplicated:     Data/Clean/non_western/deduplicated.json
-  filtered:         Data/Clean/non_western/filtered.json
-  final:            Data/Clean/non_western/books_final.csv
+  merged:           Data/Clean/merged_non_western_fantasy.json
+  merged_csv:       Data/Clean/merged_non_western_fantasy.csv
 
-# --- mature_graphic_novels collector  ---
+output_data_models_non_western_fantasy:
+  tfidf_matrix:     Models/tfidf_matrix.npz
+  vectorizer:       Models/vectorizer.pkl
+  books_index:      Models/books_index.json
+
+# --- mature_graphic_novels ---
 input_data_mature_graphic_novels:
   keywords:
 
@@ -59,7 +63,7 @@ output_data_clean_mature_graphic_novels:
   filtered:
   final:
 
-# --- Goncalo's collector ---
+# --- non_fiction ---
 input_data_non_fiction:
   keywords:
 
@@ -74,8 +78,7 @@ output_data_clean_non_fiction:
 
 # --- shared Streamlit inputs ---
 input_data_streamlit:
-  non_western:    Data/Clean/non_western/books_final.csv
-  colleague_a:    
-  colleague_b:
-
-
+  non_western_fantasy:  Data/Clean/merged_non_western_fantasy.json
+  models:               Models/
+  graphic_novels:
+  non_fiction:
