@@ -1,0 +1,4 @@
+.env
+
+Data/Clean/*.csv
+Data/Raw/**/*.csv
